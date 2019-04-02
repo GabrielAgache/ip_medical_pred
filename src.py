@@ -2,6 +2,7 @@ import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
@@ -39,7 +40,7 @@ test_x.Residence_type = [residence_type_dict[item] for item in test_x.Residence_
 test_x.smoking_status = [smoker_type_dict[item] for item in test_x.smoking_status]
 
 
-hd_model = LogisticRegression()
+hd_model = DecisionTreeRegressor()
 hd_model.fit(X, y)
 
 predictions =  hd_model.predict(test_x)
