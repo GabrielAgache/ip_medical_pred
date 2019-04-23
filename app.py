@@ -158,6 +158,29 @@ def weight():
 
     return json.dumps(data_dic)
 
+@app.route('/get_info', methods=['GET'])
+def getPatientInfo():
+	cnx = mysql.connector.connect(
+        user='b380f338c76a8d', password='8768bb5c',
+        host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
+	cursor = cnx.cursor(dictionary=True)
+	id = request.args.get('id')
+	data = request.args.get('data', default=None)
+		
+	if data is None:
+		sql = ("select * from daily_data where patient_id = %s ")
+		daily_data = (id,)
+		cursor.execute(sql, daily_data)
+		records = cursor.fetchall()
+		cnx.close()
+		return json.dumps(records)
+	else:
+		sql = ("select * from daily_data where patient_id = %s and day = %s")
+		daily_data = (id, data)
+		cursor.execute(sql, daily_data)
+		records = cursor.fetchall()
+		cnx.close()
+		return json.dumps(records)
 
 if __name__ == '__main__':
     app.run(debug=True)
