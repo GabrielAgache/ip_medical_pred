@@ -166,21 +166,20 @@ def getPatientInfo():
 	cursor = cnx.cursor(dictionary=True)
 	id = request.args.get('id')
 	data = request.args.get('data', default=None)
-		
 	if data is None:
 		sql = ("select * from daily_data where patient_id = %s ")
 		daily_data = (id,)
 		cursor.execute(sql, daily_data)
 		records = cursor.fetchall()
-		cnx.close()
-		return json.dumps(records)
 	else:
 		sql = ("select * from daily_data where patient_id = %s and day = %s")
 		daily_data = (id, data)
 		cursor.execute(sql, daily_data)
 		records = cursor.fetchall()
-		cnx.close()
-		return json.dumps(records)
+	for element in records:
+		element['day'] = element['day'].strftime("%d-%m-%Y")
+	cnx.close()
+	return json.dumps(records)
 
 if __name__ == '__main__':
     app.run(debug=True)
