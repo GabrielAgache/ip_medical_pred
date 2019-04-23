@@ -115,7 +115,7 @@ def calories():
 
     data_dic = cursor.fetchall()
 
-    res = [line[0] for line in data_dic]
+    res = [line['patient_id'] for line in data_dic]
     res = list(set(res))
 
     return json.dumps(res)
@@ -137,7 +137,7 @@ def water():
 
     data_dic = cursor.fetchall()
 
-    res = [line[0] for line in data_dic]
+    res = [line['patient_id'] for line in data_dic]
     res = list(set(res))
 
     return json.dumps(res)
@@ -159,7 +159,7 @@ def weight():
 
     data_dic = cursor.fetchall()
 
-    res = [line[0] for line in data_dic]
+    res = [line['patient_id'] for line in data_dic]
     res = list(set(res))
 
     return json.dumps(res)
