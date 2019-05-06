@@ -138,7 +138,7 @@ def water(up, down):
     res = [line['patient_id'] for line in data_dic]
     res = list(set(res))
 
-    return json.dumps(res)
+    return res
 
 
 def weight(up, down):
