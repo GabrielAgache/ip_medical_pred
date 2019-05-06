@@ -13,51 +13,184 @@ def hello():
     return 'Hello from flask'
 
 
+def verify_anomaly(data_dic):
+    cnx = mysql.connector.connect(
+        user='b380f338c76a8d', password='8768bb5c',
+        host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
+    cursor = cnx.cursor()
+
+    response = {}
+    patient_id = data_dic.get('patient_id')
+    pulse = data_dic.get('pulse')
+    temperature = data_dic.get('temperature')
+    water = data_dic.get('water')
+    weight = data_dic.get('weight')
+    calories = data_dic.get('calories')
+
+    # check if pulse is normal
+    avg = 0
+
+    if pulse is None:
+        response['pulse'] = 'no data'
+    else:
+        sql = ('select count(*) from daily_data where patient_id = %s')
+        sql_data = (patient_id,)
+        cursor.execute(sql, sql_data)
+        count = cursor.fetchone()[0]
+
+        if count < 2:
+            response['pulse'] = 'not enough data'
+        else:
+            sql = ('select pulse from daily_data where patient_id = %s \
+                    order by day desc limit 10')
+            sql_data = (patient_id,)
+            cursor.execute(sql, sql_data)
+            result = cursor.fetchall()
+
+            result = [line[0] for line in result]
+
+            for i in result:
+                avg += i
+            avg = avg / 10
+
+            if pulse > avg * 1.25 or pulse < avg * 0.75:
+                response['pulse'] = 'anomaly'
+            else:
+                response['pulse'] = 'ok'
+
+    # check if temperature is normal
+
+    if temperature is None:
+        response['temperature'] = 'no data'
+    elif temperature <= 36 or temperature >= 38:
+        response['temperature'] = 'warning'
+    else:
+        response['temperature'] = 'ok'
+
+    # check if water is normal
+
+    if water is None:
+        response['water'] = 'no data'
+    elif water < 2:
+        response['water'] = 'warning'
+    else:
+        response['water'] = 'ok'
+
+    # check if weight is normal
+
+    avg = 0
+
+    if weight is None:
+        response['weight'] = 'no data'
+    else:
+        sql = ('select count(*) from daily_data where patient_id = %s')
+        sql_data = (patient_id,)
+        cursor.execute(sql, sql_data)
+        count = cursor.fetchone()[0]
+
+        if count < 2:
+            response['weight'] = 'not enough data'
+        else:
+            sql = ('select weight from daily_data where patient_id = %s \
+                    order by day desc limit 10')
+            sql_data = (patient_id,)
+            cursor.execute(sql, sql_data)
+            result = cursor.fetchall()
+
+            result = [line[0] for line in result]
+
+            for i in result:
+                avg += i
+            avg = avg / 10
+
+            if weight > avg * 1.1 or weight < avg * 0.9:
+                response['weight'] = 'anomaly'
+            else:
+                response['weight'] = 'ok'
+
+    # check if calories is normal
+
+    avg = 0
+
+    if calories is None:
+        response['calories'] = 'no data'
+    else:
+        sql = ('select count(*) from daily_data where patient_id = %s')
+        sql_data = (patient_id,)
+        cursor.execute(sql, sql_data)
+        count = cursor.fetchone()[0]
+
+        if count < 2:
+            response['calories'] = 'not enough data'
+        else:
+            sql = ('select calories from daily_data where patient_id = %s \
+                    order by day desc limit 10')
+            sql_data = (patient_id,)
+            cursor.execute(sql, sql_data)
+            result = cursor.fetchall()
+
+            result = [line[0] for line in result]
+
+            for i in result:
+                avg += i
+            avg = avg / 10
+
+            if calories > avg * 1.25 or calories < avg * 0.75:
+                response['calories'] = 'anomaly'
+            else:
+                response['calories'] = 'ok'
+
+    return response
+
+
 def to_mysql_date(today):
     day, month, year = today.split('-')
     day, month, year = int(day), int(month), int(year)
     return date(year, month, day)
 
 
-
-@app.route('/send_data', methods= ['POST'])
+@app.route('/send_data', methods=['POST'])
 def send_data():
     data_dic = json.loads(request.data, encoding='UTF-8')
     cnx = mysql.connector.connect(
         user='b380f338c76a8d', password='8768bb5c',
         host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
     cursor = cnx.cursor()
-    
+
     patient_id = data_dic.get('patient_id')
-    today      = data_dic.get('today')
+    today = data_dic.get('today')
 
     today = to_mysql_date(today)
 
     if patient_id is None or today is None:
-        return json.dumps({'message' : 'Error! patient_id and today must be specified'})
+        return json.dumps({'message': 'Error! patient_id and \
+                            today must be specified'})
     else:
-        cursor.execute('select * from daily_data where patient_id=%s and day=%s', (patient_id, today))
+        cursor.execute(
+            'select * from daily_data where patient_id=%s \
+             and day=%s', (patient_id, today))
         dup = cursor.fetchone()
         print(dup)
         if dup is not None:
-            return json.dumps({'message' : 'Error! patient already sent the data for today'})
-    
-    #daca nu gaseste cheia in dictionar initializeaza cu None by default
-    pulse       = data_dic.get('pulse')
+            return json.dumps({'message': 'Error! patient already \
+                                sent the data for today'})
+
+    # daca nu gaseste cheia in dictionar initializeaza cu None by default
+    pulse = data_dic.get('pulse')
     temperature = data_dic.get('temperature')
-    water       = data_dic.get('water')
-    weight      = data_dic.get('weight')
-    calories    = data_dic.get('calories')
-    
+    water = data_dic.get('water')
+    weight = data_dic.get('weight')
+    calories = data_dic.get('calories')
+
     sql = ("INSERT INTO daily_data \
             (patient_id, water, weight, pulse, temperature, calories, day)\
             values (%s, %s, %s, %s, %s, %s, %s)")
-    
+
     daily_data = (patient_id, water, weight, pulse,
                   temperature, calories, today)
     cursor.execute(sql, daily_data)
     cnx.commit()
-    
+
     return json.dumps(data_dic)
 
 
@@ -65,7 +198,6 @@ def send_data():
 def get_result():
     data = request.get_json()
     return predict.classify(data, k=30)
-
 
 
 def get_pulse(min_pulse, max_pulse):
@@ -83,6 +215,7 @@ def get_pulse(min_pulse, max_pulse):
     res = list(set(res))
 
     return res
+
 
 def get_day(today):
     cnx = mysql.connector.connect(
@@ -154,6 +287,7 @@ def weight(up, down):
 
     return res
 
+
 def getPatientInfo(id, data):
     cnx = mysql.connector.connect(
         user='b380f338c76a8d', password='8768bb5c',
@@ -173,6 +307,7 @@ def getPatientInfo(id, data):
         element['day'] = element['day'].strftime("%d-%m-%Y")
     cnx.close()
     return records
+
 
 @app.route('/get', methods=['GET'])
 def get():
@@ -198,7 +333,7 @@ def get():
     if info == 'pulse':
         max_pulse = request.args.get('max', default=200, type=int)
         min_pulse = request.args.get('min', default=0, type=int)
-        return json.dumps(get_pulse(min, max))
+        return json.dumps(get_pulse(min_pulse, max_pulse))
     if info == 'all':
         id = request.args.get('id')
         today = request.args.get('day', default=None)
@@ -207,7 +342,6 @@ def get():
             day, month, year = int(day), int(month), int(year)
             today = date(year, month, day)
         return json.dumps(getPatientInfo(id, today))
-
 
 
 if __name__ == '__main__':
