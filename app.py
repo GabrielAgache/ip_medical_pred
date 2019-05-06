@@ -143,14 +143,11 @@ def water():
     return json.dumps(res)
 
 
-@app.route('/get_weight', methods=['GET'])
-def weight():
+def weight(up, down):
     cnx = mysql.connector.connect(
         user='b380f338c76a8d', password='8768bb5c',
         host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
     cursor = cnx.cursor(dictionary=True)
-    up = request.args.get('up', default=200, type=int)
-    down = request.args.get('down', default=1, type=int)
     sql = ("SELECT patient_id from daily_data where weight < %s \
             and weight > %s")
     data = (up, down,)
@@ -162,7 +159,7 @@ def weight():
     res = [line['patient_id'] for line in data_dic]
     res = list(set(res))
 
-    return json.dumps(res)
+    return res
 
 
 @app.route('/get_info', methods=['GET'])
@@ -187,6 +184,14 @@ def getPatientInfo():
         element['day'] = element['day'].strftime("%d-%m-%Y")
     cnx.close()
     return json.dumps(records)
+
+@app.route('/get', methods=['GET'])
+def get():
+    info = request.args.get('info')
+    if info == 'weight':
+    	up = request.args.get('up', default=200, type=int)
+    	down = request.args.get('down', default=1, type=int)
+    	return json.dumps(weight(up, down))
 
 
 if __name__ == '__main__':
