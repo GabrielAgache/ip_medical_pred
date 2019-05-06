@@ -58,7 +58,7 @@ def send_data():
     cursor.execute(sql, daily_data)
     cnx.commit()
     
-    return json.dumps({'message' : 'ok'})
+    return json.dumps(data_dic)
 
 
 @app.route('/predict_hd', methods=['POST'])

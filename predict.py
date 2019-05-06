@@ -71,7 +71,7 @@ def knn_class(k=8, test=0):
     else:
         return yes_votes / k
 
-# read_n_normalize('heart.csv')
+read_n_normalize('heart.csv')
 # dupa numeroase teste am stabilit valoarea lui k = 8
 
 
