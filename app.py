@@ -57,18 +57,14 @@ def get_result():
 
 
 
-def get_pac_by_age(min_pulse, max_pulse):
-    if min_pulse is None:
-        min_pulse = 0
-    if max_pulse is None:
-        max_pulse = 200
+def get_pulse(min_pulse, max_pulse):
     cnx = mysql.connector.connect(
         user='b380f338c76a8d', password='8768bb5c',
         host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
 
     cursor = cnx.cursor()
 
-    sql = "SELECT patient_id from daily_data where pulse > %s and pulse < %s"
+    sql = "SELECT patient_id from daily_data where pulse >= %s and pulse <= %s"
     cursor.execute(sql, (min_pulse, max_pulse))
 
     result = cursor.fetchall()
@@ -96,7 +92,7 @@ def calories(up, down):
         user='b380f338c76a8d', password='8768bb5c',
         host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
     cursor = cnx.cursor(dictionary=True)
-    sql = ("SELECT patient_id from daily_data where calories < %s \
+    sql = ("SELECT patient_id from daily_data where calories <= %s \
             and calories > %s")
     data = (up, down,)
 
@@ -115,7 +111,7 @@ def water(up, down):
         user='b380f338c76a8d', password='8768bb5c',
         host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
     cursor = cnx.cursor(dictionary=True)
-    sql = ("SELECT patient_id from daily_data where water < %s \
+    sql = ("SELECT patient_id from daily_data where water <= %s \
             and water > %s")
     data = (up, down,)
 
@@ -134,7 +130,7 @@ def weight(up, down):
         user='b380f338c76a8d', password='8768bb5c',
         host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
     cursor = cnx.cursor(dictionary=True)
-    sql = ("SELECT patient_id from daily_data where weight < %s \
+    sql = ("SELECT patient_id from daily_data where weight <= %s \
             and weight > %s")
     data = (up, down,)
 
@@ -189,9 +185,9 @@ def get():
         today = date(year, month, day)
         return json.dumps(get_day(today))
     if info == 'pulse':
-        max_pulse = request.args.get('max')
-        min_pulse = request.args.get('min')
-        return json.dumps(get_pac_by_age(min, max))
+        max_pulse = request.args.get('max', default=200, type=int)
+        min_pulse = request.args.get('min', default=0, type=int)
+        return json.dumps(get_pulse(min, max))
     if info == 'all':
         id = request.args.get('id')
         today = request.args.get('day', default=None)
