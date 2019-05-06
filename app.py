@@ -99,14 +99,11 @@ def get_day():
     return json.dumps(res)
 
 
-@app.route('/get_calories', methods=['GET'])
-def calories():
+def calories(up, down):
     cnx = mysql.connector.connect(
         user='b380f338c76a8d', password='8768bb5c',
         host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
     cursor = cnx.cursor(dictionary=True)
-    up = request.args.get('up', default=3000, type=int)
-    down = request.args.get('down', default=1000, type=int)
     sql = ("SELECT patient_id from daily_data where calories < %s \
             and calories > %s")
     data = (up, down,)
@@ -118,10 +115,9 @@ def calories():
     res = [line['patient_id'] for line in data_dic]
     res = list(set(res))
 
-    return json.dumps(res)
+    return res
 
 
-@app.route('/get_water', methods=['GET'])
 def water(up, down):
     cnx = mysql.connector.connect(
         user='b380f338c76a8d', password='8768bb5c',
@@ -194,6 +190,11 @@ def get():
     	up = request.args.get('up', default=10, type=int)
     	down = request.args.get('down', default=1, type=int)
     	return json.dumps(water(up, down))
+    if info == 'calories':
+    	up = request.args.get('up', default=3000, type=int)
+    	down = request.args.get('down', default=1000, type=int)
+    	return json.dumps(calories(up, down))
 
+  
 if __name__ == '__main__':
     app.run(debug=True)
