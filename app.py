@@ -19,7 +19,7 @@ def send_data():
     cnx = mysql.connector.connect(
         user='b380f338c76a8d', password='8768bb5c',
         host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
-    cursor = cnx.cursor()
+    cursor = cnx.cursor(buffered=True)
     
     patient_id = data_dic.get('patient_id')
     today      = data_dic.get('today')
