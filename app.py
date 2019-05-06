@@ -56,7 +56,10 @@ def get_result():
     return predict.classify(data, k=30)
 
 
-def get_pac_by_age(min_pulse, max_pulse):
+@app.route('/get_pulse', methods=['GET'])
+def get_pac_by_age():
+    max_pulse = request.args.get('max_pulse')
+    min_pulse = request.args.get('min_pulse')
     if min_pulse is None:
         min_pulse = 0
     if max_pulse is None:
@@ -74,10 +77,15 @@ def get_pac_by_age(min_pulse, max_pulse):
     res = [line[0] for line in result]
     res = list(set(res))
 
-    return res
+    return json.dumps(res)
 
 
-def get_day(today):
+@app.route('/get_day', methods=['GET'])
+def get_day():
+    today = request.args.get('day')
+    day, month, year = today.split('-')
+    day, month, year = int(day), int(month), int(year)
+    today = date(year, month, day)
     cnx = mysql.connector.connect(
         user='b380f338c76a8d', password='8768bb5c',
         host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
@@ -88,14 +96,17 @@ def get_day(today):
     res = cursor.fetchall()
     for element in res:
         element['day'] = element['day'].strftime("%d-%m-%Y")
-    return res
+    return json.dumps(res)
 
 
-def calories(up, down):
+@app.route('/get_calories', methods=['GET'])
+def calories():
     cnx = mysql.connector.connect(
         user='b380f338c76a8d', password='8768bb5c',
         host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
     cursor = cnx.cursor(dictionary=True)
+    up = request.args.get('up', default=3000, type=int)
+    down = request.args.get('down', default=1000, type=int)
     sql = ("SELECT patient_id from daily_data where calories < %s \
             and calories > %s")
     data = (up, down,)
@@ -107,14 +118,17 @@ def calories(up, down):
     res = [line['patient_id'] for line in data_dic]
     res = list(set(res))
 
-    return res
+    return json.dumps(res)
 
 
-def water(up, down):
+@app.route('/get_water', methods=['GET'])
+def water():
     cnx = mysql.connector.connect(
         user='b380f338c76a8d', password='8768bb5c',
         host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
     cursor = cnx.cursor(dictionary=True)
+    up = request.args.get('up', default=10, type=int)
+    down = request.args.get('down', default=1, type=int)
     sql = ("SELECT patient_id from daily_data where water < %s \
             and water > %s")
     data = (up, down,)
@@ -126,7 +140,7 @@ def water(up, down):
     res = [line['patient_id'] for line in data_dic]
     res = list(set(res))
 
-    return res
+    return json.dumps(res)
 
 
 def weight(up, down):
@@ -147,11 +161,15 @@ def weight(up, down):
 
     return res
 
-def getPatientInfo(id, data):
+
+@app.route('/get_info', methods=['GET'])
+def getPatientInfo():
     cnx = mysql.connector.connect(
         user='b380f338c76a8d', password='8768bb5c',
         host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
     cursor = cnx.cursor(dictionary=True)
+    id = request.args.get('id')
+    data = request.args.get('data', default=None)
     if data is None:
         sql = ("select * from daily_data where patient_id = %s ")
         daily_data = (id,)
@@ -165,7 +183,7 @@ def getPatientInfo(id, data):
     for element in records:
         element['day'] = element['day'].strftime("%d-%m-%Y")
     cnx.close()
-    return records
+    return json.dumps(records)
 
 @app.route('/get', methods=['GET'])
 def get():
@@ -174,31 +192,6 @@ def get():
     	up = request.args.get('up', default=200, type=int)
     	down = request.args.get('down', default=1, type=int)
     	return json.dumps(weight(up, down))
-    elif info == 'water':
-    	up = request.args.get('up', default=10, type=int)
-    	down = request.args.get('down', default=1, type=int)
-    	return json.dumps(water(up, down))
-    elif info == 'calories':
-    	up = request.args.get('up', default=3000, type=int)
-    	down = request.args.get('down', default=1000, type=int)
-    	return json.dumps(calories(up, down))
-    elif info == 'day':
-    	today = request.args.get('day')
-    	day, month, year = today.split('-')
-    	day, month, year = int(day), int(month), int(year)
-    	today = date(year, month, day)
-    	return json.dumps(get_day(today))
-    elif info == 'pulse':
-    	max_pulse = request.args.get('max')
-    	min_pulse = request.args.get('min')
-    	return json.dumps(get_pac_by_age(min, max))
-    elif info == 'all':
-    	id = request.args.get('id')
-	    today = request.args.get('day', default=None)
-	    day, month, year = today.split('-')
-    	day, month, year = int(day), int(month), int(year)
-    	today = date(year, month, day)
-    	return json.dumps(getPatientInfo(id, today))
 
 
 if __name__ == '__main__':
