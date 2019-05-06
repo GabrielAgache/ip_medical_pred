@@ -56,10 +56,8 @@ def get_result():
     return predict.classify(data, k=30)
 
 
-@app.route('/get_pulse', methods=['GET'])
-def get_pac_by_age():
-    max_pulse = request.args.get('max_pulse')
-    min_pulse = request.args.get('min_pulse')
+
+def get_pac_by_age(min_pulse, max_pulse):
     if min_pulse is None:
         min_pulse = 0
     if max_pulse is None:
@@ -77,7 +75,7 @@ def get_pac_by_age():
     res = [line[0] for line in result]
     res = list(set(res))
 
-    return json.dumps(res)
+    return res
 
 def get_day(today):
     cnx = mysql.connector.connect(
@@ -194,8 +192,12 @@ def get():
     	day, month, year = int(day), int(month), int(year)
     	today = date(year, month, day)
     	return json.dumps(get_day(today))
+    if info == 'pulse':
+    	max_pulse = request.args.get('max')
+    	min_pulse = request.args.get('min')
+    	return json.dumps(get_pac_by_age(min, max))
 
-    	
+
 
 if __name__ == '__main__':
     app.run(debug=True)
