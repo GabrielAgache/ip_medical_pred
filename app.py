@@ -79,13 +79,7 @@ def get_pac_by_age():
 
     return json.dumps(res)
 
-
-@app.route('/get_day', methods=['GET'])
-def get_day():
-    today = request.args.get('day')
-    day, month, year = today.split('-')
-    day, month, year = int(day), int(month), int(year)
-    today = date(year, month, day)
+def get_day(today):
     cnx = mysql.connector.connect(
         user='b380f338c76a8d', password='8768bb5c',
         host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
@@ -96,7 +90,7 @@ def get_day():
     res = cursor.fetchall()
     for element in res:
         element['day'] = element['day'].strftime("%d-%m-%Y")
-    return json.dumps(res)
+    return res
 
 
 def calories(up, down):
@@ -194,7 +188,14 @@ def get():
     	up = request.args.get('up', default=3000, type=int)
     	down = request.args.get('down', default=1000, type=int)
     	return json.dumps(calories(up, down))
+    if info == 'day':
+    	today = request.args.get('day')
+    	day, month, year = today.split('-')
+    	day, month, year = int(day), int(month), int(year)
+    	today = date(year, month, day)
+    	return json.dumps(get_day(today))
 
-  
+    	
+
 if __name__ == '__main__':
     app.run(debug=True)
