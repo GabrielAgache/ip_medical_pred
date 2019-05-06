@@ -3,7 +3,6 @@ import json
 import mysql.connector
 import predict
 from datetime import date
-import predict
 
 
 app = Flask(__name__)
@@ -14,40 +13,46 @@ def hello():
     return 'Hello from flask'
 
 
-id = 2
-
-
-@app.route('/index', methods=['GET', 'POST'])
-def index():
+@app.route('/send_data', methods= ['POST'])
+def send_data():
     data_dic = json.loads(request.data, encoding='UTF-8')
     cnx = mysql.connector.connect(
         user='b380f338c76a8d', password='8768bb5c',
         host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
-    global id
-    id += 1
-    patient_id = 1
     cursor = cnx.cursor()
-    calories = 1000
-    pulse = data_dic['pulse']
-    # steps = data_dic['steps']
-    temperature = data_dic['temperature']
-    today = data_dic['today']
-    water = data_dic['water']
-    weight = data_dic['weight']
+    
+    patient_id = data_dic.get('patient_id')
+    today      = data_dic.get('today')
+
+    if patient_id is None or today is None:
+        return json.dumps({'message' : 'Error! patient_id and today must be specified'})
+    else:
+        cursor.execute('select * from daily_data where patient_id=%s and day=%s', (patient_id, today))
+        row_count = cursor.rowcount
+        if row_count != 0:
+            return json.dumps({'message' : 'Error! patient already sent the data for today'})
+    
+    #daca nu gaseste cheia in dictionar initializeaza cu None by default
+    pulse       = data_dic.get('pulse')
+    temperature = data_dic.get('temperature')
+    water       = data_dic.get('water')
+    weight      = data_dic.get('weight')
+    calories    = data_dic.get('calories')
+    
     sql = ("INSERT INTO daily_data \
-            (id, patient_id, water, weight, pulse, temperature, calories, day)\
-            values (%s, %s, %s, %s, %s, %s, %s, %s)")
+            (patient_id, water, weight, pulse, temperature, calories, day)\
+            values (%s, %s, %s, %s, %s, %s, %s)")
     day, month, year = today.split('-')
     day, month, year = int(day), int(month), int(year)
     today = date(year, month, day)
-
-    daily_data = (id, patient_id, water, weight, pulse,
+    print(today)
+    
+    daily_data = (patient_id, water, weight, pulse,
                   temperature, calories, today)
     cursor.execute(sql, daily_data)
     cnx.commit()
-
-    print(data_dic)
-    return json.dumps(data_dic)
+    
+    return json.dumps({'message' : 'ok'})
 
 
 @app.route('/predict_hd', methods=['POST'])
