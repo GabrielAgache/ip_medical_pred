@@ -13,23 +13,33 @@ def hello():
     return 'Hello from flask'
 
 
+def to_mysql_date(today):
+    day, month, year = today.split('-')
+    day, month, year = int(day), int(month), int(year)
+    return date(year, month, day)
+
+
+
 @app.route('/send_data', methods= ['POST'])
 def send_data():
     data_dic = json.loads(request.data, encoding='UTF-8')
     cnx = mysql.connector.connect(
         user='b380f338c76a8d', password='8768bb5c',
         host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
-    cursor = cnx.cursor(buffered=True)
+    cursor = cnx.cursor()
     
     patient_id = data_dic.get('patient_id')
     today      = data_dic.get('today')
+
+    today = to_mysql_date(today)
 
     if patient_id is None or today is None:
         return json.dumps({'message' : 'Error! patient_id and today must be specified'})
     else:
         cursor.execute('select * from daily_data where patient_id=%s and day=%s', (patient_id, today))
-        row_count = cursor.rowcount
-        if row_count != 0:
+        dup = cursor.fetchone()
+        print(dup)
+        if dup is not None:
             return json.dumps({'message' : 'Error! patient already sent the data for today'})
     
     #daca nu gaseste cheia in dictionar initializeaza cu None by default
@@ -42,10 +52,6 @@ def send_data():
     sql = ("INSERT INTO daily_data \
             (patient_id, water, weight, pulse, temperature, calories, day)\
             values (%s, %s, %s, %s, %s, %s, %s)")
-    day, month, year = today.split('-')
-    day, month, year = int(day), int(month), int(year)
-    today = date(year, month, day)
-    print(today)
     
     daily_data = (patient_id, water, weight, pulse,
                   temperature, calories, today)
