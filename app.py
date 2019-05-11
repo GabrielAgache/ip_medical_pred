@@ -197,7 +197,7 @@ def send_data():
 
 @app.route('/predict_hd', methods=['POST'])
 def get_result():
-    data = request.get_json()
+    data = json.loads(request.data)
     return predict.classify(data, k=30)
 
 
