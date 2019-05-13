@@ -344,6 +344,8 @@ def get():
             today = date(year, month, day)
         return json.dumps(getPatientInfo(id, today))
 
+    
+
 
 if __name__ == '__main__':
     app.run(debug=True)
