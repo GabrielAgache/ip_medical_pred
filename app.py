@@ -5,6 +5,7 @@ import predict
 from datetime import date
 from flask_cors import CORS
 
+
 app = Flask(__name__)
 CORS(app)
 
@@ -12,6 +13,12 @@ CORS(app)
 @app.route('/')
 def hello():
     return flask.render_template('./views/welcome.html')
+
+
+@app.rout('/uploads/<path:filename>', methods=['GET'])
+def download(filename):
+    upload = os.path.join(current_app.root_path, 'pdfs/Medicad_API_Doc.pdf')
+    return send_from_diretory(directory=upload, filename=filename)
 
 
 def verify_anomaly(data_dic):
@@ -319,7 +326,7 @@ def get():
         return json.dumps(weight(up, down))
     if info == 'water':
         up = request.args.get('up', default=10, type=int)
-        down = request.args.get('down', default=1, type=int)
+        down = request.args.get('down', default=0, type=int)
         return json.dumps(water(up, down))
     if info == 'calories':
         up = request.args.get('up', default=3000, type=int)
@@ -336,15 +343,13 @@ def get():
         min_pulse = request.args.get('min', default=0, type=int)
         return json.dumps(get_pulse(min_pulse, max_pulse))
     if info == 'all':
-        id = request.args.get('id')
+        patient_id = request.args.get('id')
         today = request.args.get('day', default=None)
         if today is not None:
             day, month, year = today.split('-')
             day, month, year = int(day), int(month), int(year)
             today = date(year, month, day)
-        return json.dumps(getPatientInfo(id, today))
-
-    
+        return json.dumps(getPatientInfo(patient_id, today))
 
 
 if __name__ == '__main__':
