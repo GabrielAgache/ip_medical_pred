@@ -15,6 +15,12 @@ def hello():
     return 'Hello from flask'
 
 
+@app.rout('/uploads/<path:filename>', methods=['GET'])
+def download(filename):
+    upload = os.path.join(current_app.root_path, 'pdfs/Medicad_API_Doc.pdf')
+    return send_from_diretory(directory=upload, filename=filename)
+
+
 def verify_anomaly(data_dic):
     cnx = mysql.connector.connect(
         user='b380f338c76a8d', password='8768bb5c',
@@ -343,7 +349,7 @@ def get():
             day, month, year = today.split('-')
             day, month, year = int(day), int(month), int(year)
             today = date(year, month, day)
-    	return json.dumps(getPatientInfo(patient_id, today))
+        return json.dumps(getPatientInfo(patient_id, today))
 
 
 if __name__ == '__main__':
