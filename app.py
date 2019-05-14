@@ -343,7 +343,7 @@ def get():
             day, month, year = today.split('-')
             day, month, year = int(day), int(month), int(year)
             today = date(year, month, day)
-    return json.dumps(getPatientInfo(patient_id, today))
+    	return json.dumps(getPatientInfo(patient_id, today))
 
 
 if __name__ == '__main__':
