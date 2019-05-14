@@ -12,13 +12,8 @@ CORS(app)
 
 @app.route('/')
 def hello():
-    return flask.render_template('./views/welcome.html')
+    return 'Hello from flask'
 
-
-@app.rout('/uploads/<path:filename>', methods=['GET'])
-def download(filename):
-    upload = os.path.join(current_app.root_path, 'pdfs/Medicad_API_Doc.pdf')
-    return send_from_diretory(directory=upload, filename=filename)
 
 
 def verify_anomaly(data_dic):
