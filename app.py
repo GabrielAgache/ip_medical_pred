@@ -3,7 +3,6 @@ import json
 import mysql.connector
 import predict
 from datetime import date
-import predict
 
 
 app = Flask(__name__)
@@ -56,7 +55,6 @@ def get_result():
     return predict.classify(data, k=30)
 
 
-
 def get_pulse(min_pulse, max_pulse):
     cnx = mysql.connector.connect(
         user='b380f338c76a8d', password='8768bb5c',
@@ -72,6 +70,7 @@ def get_pulse(min_pulse, max_pulse):
     res = list(set(res))
 
     return res
+
 
 def get_day(today):
     cnx = mysql.connector.connect(
@@ -143,6 +142,7 @@ def weight(up, down):
 
     return res
 
+
 def getPatientInfo(id, data):
     cnx = mysql.connector.connect(
         user='b380f338c76a8d', password='8768bb5c',
@@ -163,6 +163,7 @@ def getPatientInfo(id, data):
     cnx.close()
     return records
 
+
 @app.route('/get', methods=['GET'])
 def get():
     info = request.args.get('info')
@@ -172,7 +173,7 @@ def get():
         return json.dumps(weight(up, down))
     if info == 'water':
         up = request.args.get('up', default=10, type=int)
-        down = request.args.get('down', default=1, type=int)
+        down = request.args.get('down', default=0, type=int)
         return json.dumps(water(up, down))
     if info == 'calories':
         up = request.args.get('up', default=3000, type=int)
@@ -187,16 +188,15 @@ def get():
     if info == 'pulse':
         max_pulse = request.args.get('max', default=200, type=int)
         min_pulse = request.args.get('min', default=0, type=int)
-        return json.dumps(get_pulse(min, max))
+        return json.dumps(get_pulse(min_pulse, max_pulse))
     if info == 'all':
-        id = request.args.get('id')
+        patient_id = request.args.get('id')
         today = request.args.get('day', default=None)
         if today is not None:
             day, month, year = today.split('-')
             day, month, year = int(day), int(month), int(year)
             today = date(year, month, day)
-        return json.dumps(getPatientInfo(id, today))
-
+        return json.dumps(getPatientInfo(patient_id, today))
 
 
 if __name__ == '__main__':
