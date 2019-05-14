@@ -11,7 +11,7 @@ CORS(app)
 
 @app.route('/')
 def hello():
-    return 'Hello from flask'
+    return flask.render_template('./views/welcome.html')
 
 
 def verify_anomaly(data_dic):
