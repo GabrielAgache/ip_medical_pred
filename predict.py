@@ -3,6 +3,7 @@ import json
 import math
 import random
 import matplotlib.pyplot as plt
+import mysql.connector
 
 print("predict imported")
 
@@ -11,6 +12,23 @@ max_feature = dict()
 to_predict = dict()
 health_data = list()
 
+
+def fetch_health_data_from_db():
+    global health_data
+    cnx = mysql.connector.connect(
+        user='b380f338c76a8d', password='8768bb5c',
+        host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
+    cursor = cnx.cursor(dictionary=True)
+
+    sql = ("select * from prediction_data")
+
+    cursor.execute(sql)
+
+    records = cursor.fetchall()
+    
+    for row in records:
+        del row['id_pred']
+        health_data.append(row)
 
 def normalize_feature(feature):
     global min_feature
@@ -47,7 +65,7 @@ def read_csv(path):
 
 
 def read_n_normalize(path):
-    read_csv(path)
+    fetch_health_data_from_db()
     for key in health_data[0].keys():
         if key != 'target':
             normalize_feature(key)
@@ -113,5 +131,46 @@ def acc_test():
     return results
 
 
+def load_database_with_csv():
+    #first load the data from csv into health_data global object
+    read_csv('heart.csv')
+
+    cnx = mysql.connector.connect(
+        user='b380f338c76a8d', password='8768bb5c',
+        host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
+    cursor = cnx.cursor()
+
+    sql = (
+        "insert into prediction_data(age, sex, cp, trestbps, chol,\
+        fbs, restecg, thalach, exang, oldpeak, slope, ca, thal, target) \
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    )
+    for person in health_data:
+        val_list = [val for val in person.values()]
+        val_list = tuple(val_list)
+        cursor.execute(sql, val_list)
+    
+    cursor.commit()
+    
+
+
+def test_hd_equal():
+    read_csv('heart.csv')
+    hd_size = len(health_data)
+    fetch_health_data_from_db()
+
+    first_half = list(health_data[:hd_size])
+
+    sec_half = list(health_data[hd_size:])
+
+    equal = True
+
+    for i in range(hd_size):
+        if first_half[i] != sec_half[i]:
+            equal = False
+
+    print(equal)
+    
+
 if __name__ == "__main__":
-    acc_test()
+    test_hd_equal()
