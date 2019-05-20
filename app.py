@@ -4,6 +4,8 @@ import mysql.connector
 import predict
 from datetime import date
 from flask_cors import CORS
+import numpy as np
+import pandas as pd
 
 
 app = Flask(__name__)
@@ -15,135 +17,188 @@ def hello():
     return 'Hello from flask'
 
 
+def detect_outlier1(data_1):
+    outliers = []
+    threshold = 2
+    mean_1 = np.mean(data_1)
+    std_1 = np.std(data_1)
 
-def verify_anomaly(data_dic):
+    for y in data_1:
+        z_score = (y - mean_1) / std_1
+        if np.abs(z_score) > threshold:
+            outliers.append(y)
+    return outliers
+
+
+def detect_outlier2(data_1):
+    outliers = []
+    q1, q3 = np.percentile(data_1, [25, 75])
+    iqr = q3 - q1
+    lower_bound = q1 - (1.5 * iqr)
+    upper_bound = q3 + (1.5 * iqr)
+
+    for y in data_1:
+        if y < lower_bound or y > upper_bound:
+            outliers.append(y)
+
+    return outliers
+
+
+@app.route('/verify_anomaly', methods=['POST'])
+def verify_anomaly():
     cnx = mysql.connector.connect(
         user='b380f338c76a8d', password='8768bb5c',
         host='eu-cdbr-west-02.cleardb.net', database='heroku_c4a6a99da4e3951')
+
     cursor = cnx.cursor()
 
+    data_dic = json.loads(request.data, encoding='UTF-8')
     response = {}
-    patient_id = data_dic.get('patient_id')
-    pulse = data_dic.get('pulse')
-    temperature = data_dic.get('temperature')
-    water = data_dic.get('water')
-    weight = data_dic.get('weight')
-    calories = data_dic.get('calories')
 
-    # check if pulse is normal
-    avg = 0
+    for key in data_dic:
+        if key == 'patient_id':
+            continue
 
-    if pulse is None:
-        response['pulse'] = 'no data'
-    else:
-        sql = ('select count(*) from daily_data where patient_id = %s')
-        sql_data = (patient_id,)
-        cursor.execute(sql, sql_data)
-        count = cursor.fetchone()[0]
-
-        if count < 2:
-            response['pulse'] = 'not enough data'
-        else:
-            sql = ('select pulse from daily_data where patient_id = %s \
+        sql = ('select ' + key + ' from daily_data where patient_id = %s \
                     order by day desc limit 10')
-            sql_data = (patient_id,)
-            cursor.execute(sql, sql_data)
-            result = cursor.fetchall()
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        result = [line[0] for line in result]
 
-            result = [line[0] for line in result]
+        outliers = detect_outlier1(result)
 
-            for i in result:
-                avg += i
-            avg = avg / 10
+        if len(result) < 10 or data_dic[key] is None:
+            response[key] = 'no data'
+            continue
 
-            if pulse > avg * 1.25 or pulse < avg * 0.75:
-                response['pulse'] = 'anomaly'
-            else:
-                response['pulse'] = 'ok'
-
-    # check if temperature is normal
-
-    if temperature is None:
-        response['temperature'] = 'no data'
-    elif temperature <= 36 or temperature >= 38:
-        response['temperature'] = 'warning'
-    else:
-        response['temperature'] = 'ok'
-
-    # check if water is normal
-
-    if water is None:
-        response['water'] = 'no data'
-    elif water < 2:
-        response['water'] = 'warning'
-    else:
-        response['water'] = 'ok'
-
-    # check if weight is normal
-
-    avg = 0
-
-    if weight is None:
-        response['weight'] = 'no data'
-    else:
-        sql = ('select count(*) from daily_data where patient_id = %s')
-        sql_data = (patient_id,)
-        cursor.execute(sql, sql_data)
-        count = cursor.fetchone()[0]
-
-        if count < 2:
-            response['weight'] = 'not enough data'
+        if data_dic[key] in outliers:
+            response[key] = 'anomaly'
         else:
-            sql = ('select weight from daily_data where patient_id = %s \
-                    order by day desc limit 10')
-            sql_data = (patient_id,)
-            cursor.execute(sql, sql_data)
-            result = cursor.fetchall()
+            response[key] = 'ok'
 
-            result = [line[0] for line in result]
+    return json.dumps(response)
 
-            for i in result:
-                avg += i
-            avg = avg / 10
+    # patient_id = data_dic.get('patient_id')
+    # pulse = data_dic.get('pulse')
+    # temperature = data_dic.get('temperature')
+    # water = data_dic.get('water')
+    # weight = data_dic.get('weight')
+    # calories = data_dic.get('calories')
 
-            if weight > avg * 1.1 or weight < avg * 0.9:
-                response['weight'] = 'anomaly'
-            else:
-                response['weight'] = 'ok'
+    # # check if pulse is normal
+    # avg = 0
 
-    # check if calories is normal
+    # if pulse is None:
+    #     response['pulse'] = 'no data'
+    # else:
+    #     sql = ('select count(*) from daily_data where patient_id = %s')
+    #     sql_data = (patient_id,)
+    #     cursor.execute(sql, sql_data)
+    #     count = cursor.fetchone()[0]
 
-    avg = 0
+    #     if count < 2:
+    #         response['pulse'] = 'not enough data'
+    #     else:
+    #         sql = ('select pulse from daily_data where patient_id = %s \
+    #                 order by day desc limit 10')
+    #         sql_data = (patient_id,)
+    #         cursor.execute(sql, sql_data)
+    #         result = cursor.fetchall()
 
-    if calories is None:
-        response['calories'] = 'no data'
-    else:
-        sql = ('select count(*) from daily_data where patient_id = %s')
-        sql_data = (patient_id,)
-        cursor.execute(sql, sql_data)
-        count = cursor.fetchone()[0]
+    #         result = [line[0] for line in result]
 
-        if count < 2:
-            response['calories'] = 'not enough data'
-        else:
-            sql = ('select calories from daily_data where patient_id = %s \
-                    order by day desc limit 10')
-            sql_data = (patient_id,)
-            cursor.execute(sql, sql_data)
-            result = cursor.fetchall()
+    #         for i in result:
+    #             avg += i
+    #         avg = avg / 10
 
-            result = [line[0] for line in result]
+    #         if pulse > avg * 1.25 or pulse < avg * 0.75:
+    #             response['pulse'] = 'anomaly'
+    #         else:
+    #             response['pulse'] = 'ok'
 
-            for i in result:
-                avg += i
-            avg = avg / 10
+    # # check if temperature is normal
 
-            if calories > avg * 1.25 or calories < avg * 0.75:
-                response['calories'] = 'anomaly'
-            else:
-                response['calories'] = 'ok'
+    # if temperature is None:
+    #     response['temperature'] = 'no data'
+    # elif temperature <= 36 or temperature >= 38:
+    #     response['temperature'] = 'warning'
+    # else:
+    #     response['temperature'] = 'ok'
 
-    return response
+    # # check if water is normal
+
+    # if water is None:
+    #     response['water'] = 'no data'
+    # elif water < 2:
+    #     response['water'] = 'warning'
+    # else:
+    #     response['water'] = 'ok'
+
+    # # check if weight is normal
+
+    # avg = 0
+
+    # if weight is None:
+    #     response['weight'] = 'no data'
+    # else:
+    #     sql = ('select count(*) from daily_data where patient_id = %s')
+    #     sql_data = (patient_id,)
+    #     cursor.execute(sql, sql_data)
+    #     count = cursor.fetchone()[0]
+
+    #     if count < 2:
+    #         response['weight'] = 'not enough data'
+    #     else:
+    #         sql = ('select weight from daily_data where patient_id = %s \
+    #                 order by day desc limit 10')
+    #         sql_data = (patient_id,)
+    #         cursor.execute(sql, sql_data)
+    #         result = cursor.fetchall()
+
+    #         result = [line[0] for line in result]
+
+    #         for i in result:
+    #             avg += i
+    #         avg = avg / 10
+
+    #         if weight > avg * 1.1 or weight < avg * 0.9:
+    #             response['weight'] = 'anomaly'
+    #         else:
+    #             response['weight'] = 'ok'
+
+    # # check if calories is normal
+
+    # avg = 0
+
+    # if calories is None:
+    #     response['calories'] = 'no data'
+    # else:
+    #     sql = ('select count(*) from daily_data where patient_id = %s')
+    #     sql_data = (patient_id,)
+    #     cursor.execute(sql, sql_data)
+    #     count = cursor.fetchone()[0]
+
+    #     if count < 2:
+    #         response['calories'] = 'not enough data'
+    #     else:
+    #         sql = ('select calories from daily_data where patient_id = %s \
+    #                 order by day desc limit 10')
+    #         sql_data = (patient_id,)
+    #         cursor.execute(sql, sql_data)
+    #         result = cursor.fetchall()
+
+    #         result = [line[0] for line in result]
+
+    #         for i in result:
+    #             avg += i
+    #         avg = avg / 10
+
+    #         if calories > avg * 1.25 or calories < avg * 0.75:
+    #             response['calories'] = 'anomaly'
+    #         else:
+    #             response['calories'] = 'ok'
+
+    # return response
 
 
 def to_mysql_date(today):
