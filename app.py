@@ -5,7 +5,6 @@ import predict
 from datetime import date
 from flask_cors import CORS
 import numpy as np
-import pandas as pd
 
 
 app = Flask(__name__)
@@ -54,16 +53,23 @@ def verify_anomaly():
 
     data_dic = json.loads(request.data, encoding='UTF-8')
     response = {}
+    if 'patient_id' not in data_dic:
+        return json.dumps(data_dic)
+
+    patient_id = data_dic['patient_id']
 
     for key in data_dic:
-        if key == 'patient_id':
+        if key == 'patient_id' or key == 'today':
             continue
 
-        sql = ('select ' + key + ' from daily_data where patient_id = %s \
-                    order by day desc limit 10')
+        sql = ('select ' + key + ' from daily_data where patient_id = ' +
+               str(patient_id) + ' order by day desc limit 10')
+
         cursor.execute(sql)
         result = cursor.fetchall()
         result = [line[0] for line in result]
+
+        result.append(data_dic[key])
 
         outliers = detect_outlier1(result)
 
