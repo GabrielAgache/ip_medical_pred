@@ -25,7 +25,7 @@ def fetch_health_data_from_db():
     cursor.execute(sql)
 
     records = cursor.fetchall()
-    
+
     for row in records:
         del row['id_pred']
         health_data.append(row)
@@ -149,9 +149,9 @@ def load_database_with_csv():
         val_list = [val for val in person.values()]
         val_list = tuple(val_list)
         cursor.execute(sql, val_list)
-    
+
     cursor.commit()
-    
+
 
 
 def test_hd_equal():
@@ -170,7 +170,7 @@ def test_hd_equal():
             equal = False
 
     print(equal)
-    
+
 
 if __name__ == "__main__":
     test_hd_equal()
