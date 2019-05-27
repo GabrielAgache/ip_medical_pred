@@ -119,10 +119,10 @@ def send_data():
 
     # daca nu gaseste cheia in dictionar initializeaza cu None by default
     pulse = data_dic.get('pulse', None)
-    temperature = data_dic.get('temperature' ,None)
-    water = data_dic.get('water' ,None)
-    weight = data_dic.get('weight' ,None)
-    calories = data_dic.get('calories' ,None)
+    temperature = data_dic.get('temperature', None)
+    water = data_dic.get('water', None)
+    weight = data_dic.get('weight', None)
+    calories = data_dic.get('calories', None)
 
     sql = ("INSERT INTO daily_data \
             (patient_id, water, weight, pulse, temperature, calories, day)\
@@ -288,3 +288,7 @@ def get():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+def create_app(test_config=None):
+    return app

@@ -30,6 +30,7 @@ def fetch_health_data_from_db():
         del row['id_pred']
         health_data.append(row)
 
+
 def normalize_feature(feature):
     global min_feature
     global max_feature
@@ -89,6 +90,7 @@ def knn_class(k=8, test=0):
     else:
         return yes_votes / k
 
+
 read_n_normalize('heart.csv')
 # dupa numeroase teste am stabilit valoarea lui k = 8
 
@@ -132,7 +134,7 @@ def acc_test():
 
 
 def load_database_with_csv():
-    #first load the data from csv into health_data global object
+    # first load the data from csv into health_data global object
     read_csv('heart.csv')
 
     cnx = mysql.connector.connect(
@@ -151,7 +153,6 @@ def load_database_with_csv():
         cursor.execute(sql, val_list)
 
     cursor.commit()
-
 
 
 def test_hd_equal():

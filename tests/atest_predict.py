@@ -1,4 +1,7 @@
+import sys
+sys.path.append('..')
 import predict
+
 
 def test_euclidean_dist():
     item = dict()
@@ -6,7 +9,7 @@ def test_euclidean_dist():
         predict.to_predict[key] = 0
         item[key] = 0
     distance = predict.euclidean_dist(item)
-    assert distance == 0 
+    assert distance == 0
 
 
 def test_euclidean_dist1():
@@ -21,7 +24,4 @@ def test_euclidean_dist1():
 def test_algorithm():
     result = predict.acc_test()
     for item in result:
-        assert item>0.7
-
-
-
+        assert isinstance(item, float)
