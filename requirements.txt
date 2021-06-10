@@ -7,7 +7,7 @@ colorama==0.4.1
 coverage==4.5.3
 crypto==1.4.1
 cycler==0.10.0
-django==2.2a1
+django==2.2.24
 Flask==1.0.2
 Flask-Cors==3.0.7
 gunicorn==19.9.0
